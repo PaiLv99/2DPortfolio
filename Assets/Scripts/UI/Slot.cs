@@ -31,13 +31,15 @@ public class Slot : MonoBehaviour, IPointerClickHandler
 
     public void AddItem(Data.ItemData item, int count = 0)
     {
-        if (_slotType == SlotType.Item)
+        if (item._type == "Potion" || item._type == "Scroll")
         {
             if (ItemMng.Instance.CheckIdentifiedList(item._name))
                 _iconSprite.sprite = item._icon;
             else
                 _iconSprite.sprite = Resources.Load<Sprite>("Image/Icon/QIcon");
         }
+        else
+            _iconSprite.sprite = null;
 
         _itemData = item;
         _itemSprite.sprite = item._sprite;
@@ -74,7 +76,10 @@ public class Slot : MonoBehaviour, IPointerClickHandler
         Color alpha = _itemSprite.color;
         alpha.a = value;
         _itemSprite.color = alpha;
-        _iconSprite.color = alpha;
+        if (_iconSprite.sprite == null)
+            _iconSprite.color = Color.clear;
+        else
+            _iconSprite.color = alpha;
     }
 
     public void ClearSlot()

@@ -78,7 +78,8 @@ public class Select : BaseUI
             _selectPlayers[i].Reset();
 
         _selectedPlayer = null;
-        _startButton.image.color = Color.clear;
+        _startButton.image.color = new Color(1, 1, 1, 0);
+        _newGameText.color = new Color(1, 1, 1, 0);
     }
 
     //private void ResetSelect()
