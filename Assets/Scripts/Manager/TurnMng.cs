@@ -14,7 +14,7 @@ public class TurnMng : TSingleton<TurnMng>
         StartCoroutine(IEHeroTurn());
     }
 
-    private IEnumerator IEHeroTurn()
+    IEnumerator IEHeroTurn()
     {
         Hero hero = GameMng.CharMng.GetHero();
 
@@ -35,6 +35,7 @@ public class TurnMng : TSingleton<TurnMng>
 
             hero.TileTypeChange();
             hero.Idle();
+            hero.FoV();
         }
         MonsterTurn();
     }
@@ -44,7 +45,7 @@ public class TurnMng : TSingleton<TurnMng>
         StartCoroutine(IEMonsterTurn());
     }
 
-    private IEnumerator IEMonsterTurn()
+    IEnumerator IEMonsterTurn()
     {
         List<Monster> monsters = GameMng.CharMng.GetMonsters();
 
@@ -53,7 +54,8 @@ public class TurnMng : TSingleton<TurnMng>
             if (monsters[i].Freeze)
                 continue;
             
-            monsters[i].StartAI();
+            // monsters[i].StartAI();
+            monsters[i].MonsterAI.Tick();
             GameMng.Task.Execute();
 
             while (!monsters[i].IsDone)

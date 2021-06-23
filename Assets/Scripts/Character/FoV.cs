@@ -7,12 +7,11 @@ public class FoV
     public Map Map { get; private set; }
     public int SightRadius { get; set; }
 
-    // 흐린 화면을 원함
-    private bool[,] _shadow;
-    private Dictionary<Vector2Int, Color> _pixelDic = new Dictionary<Vector2Int, Color>();
-    private Texture2D _texture;
-
     private Dictionary<Vector2Int, Tile> _visibleTiles = new Dictionary<Vector2Int, Tile>();
+
+    List<Vector2Int> mList = new List<Vector2Int>();
+
+    public List<Vector2Int> List => mList;
 
     public FoV(Map map, int radius)
     {
@@ -25,31 +24,6 @@ public class FoV
         Map = map;
     }
 
-    private void CreateSprite()
-    {
-        Sprite shadowSprite = Sprite.Create(_texture, new Rect(), Vector2.zero);
-        // sprite를 만들어서 해당하는 픽셀을 바꿔준다?
-        // sprite가 여러게여야한다?
-
-    }
-
-    private void CreateTexture()
-    {
-        _shadow = new bool[Map._width, Map._height];
-        _texture = new Texture2D(Map._width, Map._height)
-        {
-            anisoLevel = 0,
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp
-        };
-
-        var pixels = _texture.GetPixels();
-
-        for (int x = 0; x < Map._width * Map._height; x++)
-            _pixelDic.Add(new Vector2Int(x, x * Map._height), pixels[x]);
-
-    }
-
     public Dictionary<Vector2Int, Tile> GetVisibleTiles()
     {
         return _visibleTiles;
@@ -58,16 +32,6 @@ public class FoV
     public void Compute(Vector2 position)
     {
         _visibleTiles.Clear();
-
-        for (int x = 0; x < Map._width; x++)
-            for (int y = 0; y < Map._height; y++)
-            {
-                if (Map._tiles[x,y] != null)
-                {
-                    Map._tiles[x, y].Visible = false;
-                    Map._tiles[x, y].SetVisible();
-                }
-            }
 
         int dx = (int)position.x;
         int dy = (int)position.y;
@@ -79,10 +43,10 @@ public class FoV
 
         for (int y = top; y < bottom; y++)
             for (int x = left; x < right; x ++)
-                RayCastWithBresenham(position, new Vector2(x, y), SightRadius);
+                RayCastWithBresenham(position, new Vector2Int(x, y), SightRadius);
     }   
 
-    private void RayCastWithBresenham(Vector2 start, Vector2 target, int radius)
+    private void RayCastWithBresenham(Vector2 start, Vector2Int target, int radius)
     {
         Vector2 delta = target - start;
 
@@ -125,18 +89,18 @@ public class FoV
 
             if (Map._tiles[x,y] != null && !Map._tiles[x,y].Transparent )
             {
-                Map.SetVisible(x, y, true);
-                Map.SetExplored(x, y, true);
                 break;
             }
 
             if (Map._tiles[x,y] != null)
             {
-                Map.SetVisible(x, y, true);
-                Map.SetExplored(x, y, true);
-
-                if (!_visibleTiles.ContainsKey(Map._tiles[x, y].Position))
+                if ( _visibleTiles.ContainsKey(Map._tiles[x, y].Position) == false )
                     _visibleTiles.Add(Map._tiles[x, y].Position, Map._tiles[x, y]);
+
+                if( mList.Contains(Map.Tiles[x,y].Position) == false )
+                {
+                    mList.Add(Map.Tiles[x, y].Position);
+                }
             }
 
             curr += primaryStep;

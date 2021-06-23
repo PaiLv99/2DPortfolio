@@ -6,6 +6,7 @@ public class BaseChar : BaseProduct
 {
     protected Animator _animator;
     protected Map _map;
+    public Map Map => _map;
     private readonly Vector2 _offset = new Vector2(0, 0.25f);
 
     public bool Freeze { get; set; }
@@ -13,6 +14,8 @@ public class BaseChar : BaseProduct
     public bool Vision { get; set; }
     public int UniqueID { get; private set; }
     public bool IsDone { get; set; } = true;
+    int sightRadius;
+    public int SightRadius => sightRadius;
 
     private void Awake()
     {

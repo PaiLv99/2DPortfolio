@@ -266,7 +266,9 @@ public static class Helper
     public static int DistanceVector2(Vector2 form, Vector2 to)
     {
         Vector2 delta = to - form;
+
         int deltaint = (int)(to - form).magnitude;
+
         return (int)(Mathf.Pow(delta.x, 2) + Mathf.Pow(delta.y, 2));
     }
 

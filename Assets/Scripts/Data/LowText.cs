@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class LowText
 {
-    private Dictionary<int, Dictionary<string, string>>
-        _tableDic = new Dictionary<int, Dictionary<string, string>>();
+    private Dictionary<int, Dictionary<string, string>> _tableDic = new Dictionary<int, Dictionary<string, string>>();
     private readonly string Path = "Table/";
 
     public void Load(string path)
@@ -37,9 +36,9 @@ public class LowText
             // 값을 분류합니다.
             string[] val = rowlist[j].Split(',');
 
-            int mainKey = 0;
+            //int mainKey = 0;
 
-            if (!int.TryParse(val[0], out mainKey))
+            if (!int.TryParse(val[0], out int mainKey))
             {
                 Debug.Log(j + " 행 값이 정수가 아닙니다.");
                 continue;

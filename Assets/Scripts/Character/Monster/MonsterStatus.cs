@@ -6,15 +6,35 @@ public class MonsterStatus : Status
 {
     private Monster _monster;
 
+    public int AP { get; set; }
+    public int EXP { get; set; }
+    public int DP { get; set; }
+    public int LEVEL { get; protected set; }
+    public int MAXHP { get; protected set; }
+    public int InstanceID { get; protected set; }
+
+
     private HP _hp;
     private string[] _createItems;
 
+    float stackHeal;
+
     private float[] _itemProb = { 0.5f, 0.5f };
+
+    public float HPRatio => mHp / (float)MaxHp;
+
+    int mHp;
+    public int Hp => mHp;
+
+    int maxHp;
+    public int MaxHp => maxHp;
+
+    public int Threshold = 3;
 
     public MonsterStatus(Data.MonsterData data, Monster mon, HP hp)
     {
-        HP = data._hp;
-        MAXHP = HP;
+        mHp = data._hp;
+        maxHp = mHp;
         EXP = data._exp;
         AP = data._ap;
         DP = data._dp;
@@ -51,18 +71,16 @@ public class MonsterStatus : Status
             return;
         }
 
-        HP -= value;
-        if (HP <= 0)
+        mHp -= value;
+        if (mHp <= 0)
         {
             MonsterDie();
         }
         else 
         {
-            EffectMng.Instance.Pop("Blood").CallEvent(_monster.transform.position);
+            EffectMng.Instance.Pop("Blood").CallEvent(_monster.transform.position + new Vector3(0.5f, 0.5f) );
             text.SetText(value.ToString());
             text.CallEvent(_monster.transform.position);
-            float hpBar = HP / MAXHP;
-            //_hpBar.FillAmount(hpBar);
             _hp.UpdateHP();
         }
 
@@ -70,8 +88,8 @@ public class MonsterStatus : Status
 
     private void MonsterDie()
     {
-        _monster.FindCurrTile().TILETYPE = TileType.Floor;
         GameMng.CharMng.GetHero().GetEXP(EXP);
+
         _monster.DeathEffect();
     }
 
@@ -87,6 +105,29 @@ public class MonsterStatus : Status
             item.transform.position = _monster.transform.position;
             item.CreateEffect();
             GameMng.CharMng.AddItem(item);
+        }
+    }
+
+    public void Heal(float heal)
+    {
+        if (heal < 1)
+        {
+            stackHeal += heal;
+            if (stackHeal >= 1)
+            {
+                mHp += (int)stackHeal;
+                stackHeal = 0;
+            }
+        }
+        else
+        {
+            mHp += (int)heal;
+
+        }
+
+        if (mHp >= MaxHp )
+        {
+            mHp = MaxHp;
         }
     }
 }

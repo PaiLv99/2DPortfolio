@@ -18,7 +18,7 @@ public class Move : TaskReceiver<TaskMove>
 
         Vector2 start = task.GO.transform.position;
         Vector2 target = task.Tile.Position + _offset;
-      
+
         if (task.Tile.Visible)
         {
             StartCoroutine(IEMove(start, target));

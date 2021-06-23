@@ -3,6 +3,15 @@
 [System.Serializable]
 public class HeroStatus : Status
 {
+    public int HP { get; set; }
+    public int AP { get; set; }
+    public int EXP { get; set; }
+    public int DP { get; set; }
+    public int LEVEL { get; protected set; }
+    public int MAXHP { get; protected set; }
+    public int InstanceID { get; protected set; }
+
+
     public int MAXEXP { get; private set; }
 
     public Sprite SPRITE { get; private set; }
@@ -83,7 +92,7 @@ public class HeroStatus : Status
         UIMng.Instance.CallEvent(UIList.HUD, "UpdateHP");
         UIMng.Instance.CallEvent(UIList.HUD, "HPCut", prevHP);
         effect.SetText(value.ToString());
-        effect.CallEvent(GameMng.CharMng.GetHero().transform.position);
+        effect.CallEvent(GameMng.CharMng.GetHero().transform.position + new Vector3(0.5f, 0.5f));
         //_charPopUp.DamagePop(value);
 
         if (HP <= 0)

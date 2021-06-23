@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class HP : MonoBehaviour
 {
-    private Status _status;
+    private MonsterStatus _status;
     private Slider _hpSlider;
     private RectTransform _transform;
     private Image _backColor, _fillColor;
@@ -13,7 +13,7 @@ public class HP : MonoBehaviour
     private bool IsOpen;
     public int InstanceID { get; private set; }
 
-    public void SetStatus(Status status)
+    public void SetStatus(MonsterStatus status)
     {
         _hpSlider = Helper.Find<Slider>(transform, "HP");
         _backColor = Helper.Find<Image>(transform, "HP/Background");
@@ -27,7 +27,7 @@ public class HP : MonoBehaviour
     public void UpdateHP()
     {
         IsOpen = true;
-        _hpSlider.value = (float)_status.HP / _status.MAXHP;
+        _hpSlider.value = (float)_status.Hp / _status.MaxHp;
     }
 
     public void UpdateLocalScale(Transform parentTransform)

@@ -2,6 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum EffectType
+{
+    TextEffect,
+    FlameEffect,
+    ExclamationMark,
+    Blood,
+    Searching,
+}
+
 public class EffectMng : TSingleton<EffectMng>
 {
     private BaseEffect[] _effectPrefabs;

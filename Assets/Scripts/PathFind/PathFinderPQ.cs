@@ -50,6 +50,9 @@ public class PathFinderPQ
         _openList[start.X, start.Y] = startH;
         start.PARENT = null;
 
+        Tile tile = start;
+        Tile tt;
+
         while (pQueue.Count > 0)
         {
             PQNode node = pQueue.Pop();
@@ -62,6 +65,7 @@ public class PathFinderPQ
             if (node.X == target.X && node.Y == target.Y)
                 break;
 
+            // find next tile이웃 노드를 찾고 fcost를 구해 구해진 코스트가 기존의 예약된(openlist의) 코스트보다 작다면 우선순위 큐에 넣는다. 
             for (int i = 0; i < _deltaX.Length; i++)
             {
                 int neighborX = node.X + _deltaX[i];
@@ -76,7 +80,14 @@ public class PathFinderPQ
                 if (_closedList[neighborX, neighborY])
                     continue;
 
-                int g = node.G + _cost[i];
+                TileType type = _map.Tiles[neighborX, neighborY].TILETYPE;
+
+                int delta = 0;
+
+                if (type == TileType.Monster || type == TileType.Hero )
+                    delta += 1000;
+
+                int g = node.G + _cost[i] + delta;
                 int h = CalcDistance(target, _map._tiles[neighborX, neighborY]);
 
                 if (_openList[neighborX, neighborY] < g + h)
@@ -84,6 +95,7 @@ public class PathFinderPQ
 
                 _openList[neighborX, neighborY] = g + h;
                 pQueue.Push(new PQNode() { F = g + h, H = h, G = g, X = neighborX, Y = neighborY });
+            
                 _map._tiles[neighborX, neighborY].PARENT = _map._tiles[node.X, node.Y];
             }
         }
@@ -105,7 +117,7 @@ public class PathFinderPQ
 
         switch(type)
         {
-            case TileType.Monster: return true;
+            //case TileType.Monster: return true;
             case TileType.Hole: return true;
             case TileType.Wall: return true;
         }

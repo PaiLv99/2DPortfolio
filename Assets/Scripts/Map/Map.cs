@@ -18,6 +18,7 @@ public class Map
     public List<Room> _rooms = new List<Room>();
     public List<Door> _doors = new List<Door>();
     public Tile[,] _tiles;
+    public Tile[,] Tiles => _tiles;
     public bool Spawned { get; set; }
     public int _roomCount;
 
@@ -98,10 +99,10 @@ public class Map
 
     public Tile GetTile(int x, int y)
     {
-        //if (_tiles[x, y] == null)
-            //return null;
-
         if (x < 0 || x >= _width || y < 0 || y >= _height)
+            return null;
+
+        if (_tiles[x, y] == null)
             return null;
 
         return _tiles[x, y];        
@@ -393,7 +394,6 @@ public class Map
                 {
                     Tile tile = GetTile(i, j);
                     GameMng.Pool.TilePush(tile, tile.name);
-                    //PoolMng.Instance.TilePush(tile, tile.name);
                     _tiles[i, j] = null;
                 }
     }

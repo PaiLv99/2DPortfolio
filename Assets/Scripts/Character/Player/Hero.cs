@@ -9,7 +9,7 @@ public class Hero : BaseChar
     private readonly Vector2 _offset = new Vector2(0, 0.25f);
 
     public System.Action Death;
-    public int _radius = 5;
+    public int _radius = 3;
 
     public bool IsShoot { get; set; }
     public bool IsThrow { get; set; }
@@ -17,6 +17,9 @@ public class Hero : BaseChar
     public Tile SelectTile { get; private set; }
     private Tile _currTile, _prevTile;
     private FoV _fov;
+
+    List<Vector2Int> visionTile = new List<Vector2Int>();
+    public List<Vector2Int> VisionTile => visionTile;
 
     public Queue<BaseTask> TemporaryStorage { get; private set; } = new Queue<BaseTask>();
 
@@ -56,30 +59,26 @@ public class Hero : BaseChar
         transform.position = pos + _offset;
     }
 
-    public void FoV()
+    void InitFoVMap()
     {
         for (int i = 0; i < GameMng.Map.CurrMap._doors.Count; i++)
             GameMng.Map.CurrMap._doors[i].Check();
 
-        // 초기화
         for (int x = 0; x < _map._width; x++)
         {
             for (int y = 0; y < _map._height; y++)
             {
-                if (_map._tiles[x,y] != null)
+                if (_map._tiles[x, y] != null)
                 {
                     _map._tiles[x, y].Visible = false;
                     _map._tiles[x, y].SetVisible();
                 }
             }
         }
+    }
 
-        List<Vector2Int> tileList = new List<Vector2Int>();
-        Vector2Int pos = NotifyPosition();
-        ShadowCaster.ComputeFOVWithShadowCast(pos.x, pos.y, _radius,
-                                                (x, y) => _map._tiles[x, y].Transparent == false,
-                                                (x, y) => { tileList.Add(new Vector2Int(x, y)); });
-
+    void SetVisionCondition(List<Vector2Int> tileList)
+    {
         for (int i = 0; i < tileList.Count; i++)
         {
             int x = tileList[i].x;
@@ -98,6 +97,36 @@ public class Hero : BaseChar
         for (int i = 0; i < GameMng.CharMng.GetItems().Count; i++)
             items[i].VisibleChange(tileList);
     }
+
+    public void FoV()
+    {
+        // 초기화
+        InitFoVMap();
+
+        List<Vector2Int> tileList = new List<Vector2Int>();
+
+        Vector2Int pos = NotifyPosition();
+        bool[,] lit = new bool[_map._width, _map._height];
+        SilverlightShadowCasting.ShadowCaster.ComputeFieldOfViewWithShadowCasting( pos.x, pos.y, _radius,
+        (x, y) => _map._tiles[x, y].Transparent == false,
+        (x, y) =>
+        {
+            if( tileList.Contains(new Vector2Int(x,y)) == false )
+            {
+                tileList.Add(new Vector2Int(x, y));
+            }
+            { lit[x, y] = true; }
+        }
+        
+        );
+
+        visionTile = tileList;
+
+        SetVisionCondition(tileList);
+
+    }
+
+    
 
     private void OnTouch(Define.TouchEvent evt)
     {
@@ -172,7 +201,7 @@ public class Hero : BaseChar
     }
 
     private void Attack(Tile start, Tile target)
-    {
+    {   
         List<Tile> path = GameMng.Map.PathFinding(start, target);
 
         if (path != null && path.Count > 0)
@@ -185,6 +214,15 @@ public class Hero : BaseChar
 
         GameMng.Task.TaskRegister(TemporaryStorage.Dequeue());
         GameMng.Task.Execute();
+    }
+
+    void PathFind(Tile start, Tile target)
+    {
+        List<Tile> path = GameMng.Map.PathFinding(start, target);
+
+        if (path != null && path.Count > 0)
+            for (int i = 0; i < path.Count; i++)
+                TemporaryStorage.Enqueue(new TaskMove(path[i], gameObject));
     }
 
     private void Move(Tile start, Tile target)

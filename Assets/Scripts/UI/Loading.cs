@@ -47,11 +47,9 @@ public class Loading : BaseUI
 
             totalProgress = (_mapPregress + _sceneProgress) / 2.0f;
             _loadingBar.fillAmount = totalProgress;
-            Debug.Log("InIN");
             yield return null;
         }
 
-        Debug.Log("종료");
 
         GameMng.Map.IsDone = false;
         StopCoroutine(_textCoroutine);

@@ -5,24 +5,33 @@ using UnityEngine;
 
 public class Monster : BaseChar
 {
-    private Hero _enemy, _lockTarget;
+    private Hero mHero;
     private Tile _prevTile, _currTile;
     public SpriteRenderer Renderer { get; private set; }
 
-    // 8.25 
-    //public bool Visible { get; set; }
-    private int SightRadius { get; set; }
-    private bool IsAwaken { get; set; }
+    bool isAwaken;
+    public bool IsAwaken => Status.HPRatio < 1 || isAwaken != false || awakenCount >= 0;
+
+    int radius;
+    public int Radius => radius;
 
     private MonsterStatus _status;
+    public MonsterStatus Status => _status;
+
+    int awakenCount = -1;
+    public int AwakenCount => awakenCount;
+
+    public int fleeIndex = 0;
+    public List<Tile> fleeTiles = new List<Tile>();
+
     public Data.MonsterData Data;
     private float[] _itemCreateProv = { 0.3f, 0.7f };
     private HP _hp;
 
-    private int _awakenCount;
+    public int CURRHP;
 
-    public Queue<BaseTask> TempStorage { get; private set; } = new Queue<BaseTask>();
-    private Tile _prevTargetTile;
+    MonsterAI monsterAI;
+    public MonsterAI MonsterAI => monsterAI;
 
     public override void Init(Data.BaseData info)
     {
@@ -33,54 +42,29 @@ public class Monster : BaseChar
         _hp = Instantiate(Resources.Load<HP>("Prefabs/UI/World/HP"), transform.position + new Vector3(0,0.75f,0), transform.rotation, transform);
         _status = new MonsterStatus(Data, this, _hp);
 
-        SightRadius = 3;
+        radius = 3;
+
+        CURRHP = _status.Hp;
+
+        mHero = GameMng.CharMng.GetHero();
+
+        monsterAI = new MonsterAI(this, mHero);
     }
 
     public override void Damage(int value)
     {
-        IsAwaken = true;
         _animator.SetTrigger("Damage");
         _status.Damage(value);
+        CURRHP -= value;
         Helper.BlinkCount(transform, 3);
-
-        _lockTarget = GameMng.CharMng.GetHero();
     }
 
     public override void MagicDamage(int value)
     {
-        IsAwaken = true;
         _status.MagicDamage(value);
         _animator.SetTrigger("Damage");
+        CURRHP -= value;
         Helper.BlinkCount(transform, 3);
-
-        _lockTarget = GameMng.CharMng.GetHero();
-    }
-
-    //private void Move()
-    //{
-    //    Tile targetTile = GameMng.CharMng.GetHero().FindCurrTile();
-
-    //    List<Tile> path = PathFinder.Instance.PathFinding(FindCurrTile(), targetTile);
-    //    if (path.Count > 0)
-    //    {
-    //        GameMng.Task.TaskRegister(new TaskMove(path[0], gameObject));
-    //    }
-    //}
-
-    private void Move()
-    {
-        TempStorage.Clear();
-
-        Tile targetTile = GameMng.CharMng.GetHero().FindCurrTile();
-        _prevTargetTile = targetTile;
-
-        List<Tile> path = GameMng.Map.PathFinding(FindCurrTile(), targetTile);
-        if (path.Count > 0)
-        {
-            for (int i = 0; i < path.Count; i++)
-                TempStorage.Enqueue(new TaskMove(path[0], gameObject));
-            GameMng.Task.TaskRegister(TempStorage.Dequeue());
-        }
     }
 
     public void PlayAnim(string str)
@@ -88,15 +72,7 @@ public class Monster : BaseChar
         _animator.SetTrigger(str);
     }
 
-    private void Attack()
-    {
-        if (_lockTarget != null)
-            _lockTarget = null;
-
-        Tile targetTile = GameMng.CharMng.GetHero().FindCurrTile();
-        GameMng.Task.TaskRegister(new TaskAttack(targetTile, gameObject, _status.AP));
-    }
-
+    /*
     private void Flee()
     {
         List<Vector2Int> coords = new List<Vector2Int>();
@@ -123,53 +99,14 @@ public class Monster : BaseChar
             }
         }
     }
-
-
-    private bool CheckAttack()
-    {
-        Vector2Int pos = NotifyPosition();
-
-        for (int x = -1; x < 2; x++)
-        {
-            for (int y = -1; y < 2; y++)
-            {
-                if (x == 0 && y == 0)
-                    continue;
-
-                Tile tile = _map.GetTile(pos.x + x, pos.y + y);
-                if (tile != null && tile.TILETYPE == TileType.Hero)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    public void StartAI()
-    {
-        if (IsAwaken)
-        {
-            if (CheckAttack())
-                Attack();
-            else if (IsSightInHero() || _enemy != null)
-            {
-                if (TempStorage.Count > 0)
-                    GameMng.Task.TaskRegister(TempStorage.Dequeue());
-                else
-                    Move();
-            }
-            else
-                Flee();
-        }
-        else
-            Awaken();
-    }
+    */
 
     public void Idle()
     {
         _animator.SetBool("Move", false);
     }
 
+    /*
     // target position에 갈 수 있는지 없는지 판별하는 함수(PathFinder의 부하를 줄이기 위해) 
     private bool CheckTileSurrond(Vector2Int target)
     {
@@ -186,60 +123,8 @@ public class Monster : BaseChar
             }
         return false;
     }
+    */
 
-    private bool IsSightInHero()
-    {
-        Vector2Int heroPos = Vector2Int.zero;
-        List<Vector2Int> tiles = new List<Vector2Int>();
-        Vector2Int pos = NotifyPosition();
-        ShadowCaster.ComputeFOVWithShadowCast(pos.x, pos.y, SightRadius,
-                                               (x, y) => _map._tiles[x, y].Transparent == false,
-                                               (x, y) => { tiles.Add(new Vector2Int(x, y)); });
-
-        for (int i = 0; i < tiles.Count; i++)
-        {
-            if (tiles[i] == GameMng.CharMng.GetHero().NotifyPosition())
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void Awaken()
-    {
-        Vector2Int heroPos = Vector2Int.zero;
-        List<Vector2Int> tiles = new List<Vector2Int>();
-        Vector2Int pos = NotifyPosition();
-        ShadowCaster.ComputeFOVWithShadowCast(pos.x, pos.y, SightRadius,
-                                               (x, y) => _map._tiles[x, y].Transparent == false,
-                                               (x, y) => { tiles.Add(new Vector2Int(x, y)); });
-        
-        for (int i = 0; i < tiles.Count; i++)
-        {
-            if (tiles[i] == GameMng.CharMng.GetHero().NotifyPosition())
-            {
-                _awakenCount++;
-                break;
-            }
-        }
-
-        if (_awakenCount >= 2)
-        {
-            Vector2 delta = NotifyPosition() - heroPos;
-            Vector3 offset;
-            if (delta.x < 0)
-                offset = new Vector3(-1, 1);
-            else
-                offset = new Vector3(1, 1);
-            IsAwaken = true;
-            transform.localScale = offset;
-            EffectMng.Instance.Pop("ExclamationMark").CallEvent(transform.position + offset * 0.5f);
-        }
-
-        IsDone = true;
-    }
 
     public void TileTypeChange()
     {
@@ -275,9 +160,16 @@ public class Monster : BaseChar
         _hp.Visible(false);
     }
 
+    public void SetAwakenCount(int count)
+    {
+        awakenCount += count;
+    }
+
     #region Monster Death Effect
     public void DeathEffect()
     {
+        FindCurrTile().TILETYPE = FindCurrTile().ORIGINTYPE;
+
         StartCoroutine(IEDeathEffect());
     }
 
@@ -294,7 +186,6 @@ public class Monster : BaseChar
         float elapsedTime = 0;
         float targetTime = 1.6f;
 
-        FindCurrTile().TILETYPE = FindCurrTile().ORIGINTYPE;
 
         _status.RandomItem();
         Color originColor = Renderer.color;
@@ -307,7 +198,7 @@ public class Monster : BaseChar
         }
 
         GameMng.Pool.MonsterPush(Data._name, this);
-        //PoolMng.Instance.MonsterPush(Data._name, this);
+
         Renderer.color = originColor;
     }
     #endregion
